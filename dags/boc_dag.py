@@ -1,45 +1,9 @@
-from collections import defaultdict
-
-from pathlib import Path
-
 from airflow import DAG
-from airflow.models import BaseOperator
-from airflow.utils.decorators import apply_defaults
 from airflow.version import version
 from datetime import datetime, timedelta
-
-from kedro.framework.session import KedroSession
-from kedro.framework.project import configure_project
-
+from include.operators.kedro_operator import KedroOperator
 from great_expectations_provider.operators.great_expectations import GreatExpectationsOperator
-
-
-
-class KedroOperator(BaseOperator):
-
-    @apply_defaults
-    def __init__(
-        self,
-        package_name: str,
-        pipeline_name: str,
-        node_name: str,
-        project_path: str,
-        env: str,
-        *args, **kwargs
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        self.package_name = package_name
-        self.pipeline_name = pipeline_name
-        self.node_name = node_name
-        self.project_path = project_path
-        self.env = env
-
-    def execute(self, context):
-        configure_project(self.package_name)
-        with KedroSession.create(self.package_name,
-                                 self.project_path,
-                                 env=self.env) as session:
-            session.run(self.pipeline_name, node_names=[self.node_name])
+from pathlib import Path
 
 # Kedro settings required to run your pipeline
 env = "local"
@@ -48,7 +12,9 @@ project_path = Path.cwd()
 package_name = "boc"
 
 #Define Great Expectations file paths
-data_file = '/usr/local/airflow/data/01_raw/iris.csv'
+raw_data_file = '/usr/local/airflow/data/01_raw/iris.csv'
+test_data_file = '/usr/local/airflow/data/05_model_input/example_test_x.pkl'
+train_data_file = '/usr/local/airflow/data/05_model_input/example_train_x.pkl'
 ge_root_dir = '/usr/local/airflow/include/great_expectations'
 
 
@@ -59,32 +25,48 @@ default_args = {
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
-    'retry_delay': timedelta(minutes=5)
+    'retry_delay': timedelta(minutes=1)
 }
 
-# Using a DAG context manager, you don't have to specify the dag property of each task
-with DAG(
-    "boc",
-    start_date=datetime(2019, 1, 1),
-    max_active_runs=3,
-    schedule_interval=timedelta(minutes=30),  # https://airflow.apache.org/docs/stable/scheduler.html#dag-runs
-    default_args=default_args,
-    catchup=False # enable if you don't want historical dag runs to run
-) as dag:
+with DAG("boc",
+        start_date=datetime(2021, 1, 1),
+        max_active_runs=1,
+        schedule_interval='@daily',
+        default_args=default_args,
+        catchup=False 
+    ) as dag:
 
-    ge_batch_kwargs_pass = GreatExpectationsOperator(
-        task_id='ge_checkpoint',
-        expectation_suite_name='kedro.demo',
+    ge_raw_checkpoint = GreatExpectationsOperator(
+        task_id='ge_raw_checkpoint',
+        expectation_suite_name='kedro.raw',
         batch_kwargs={
-            'path': data_file,
+            'path': raw_data_file,
             'datasource': 'data__dir'
         },
         data_context_root_dir=ge_root_dir
     )
 
-    tasks = {}
+    ge_train_checkpoint = GreatExpectationsOperator(
+        task_id='ge_train_checkpoint',
+        expectation_suite_name='kedro.train',
+        batch_kwargs={
+            'path': train_data_file,
+            'datasource': 'data__dir'
+        },
+        data_context_root_dir=ge_root_dir
+    )
 
-    tasks["split"] = KedroOperator(
+    ge_test_checkpoint = GreatExpectationsOperator(
+        task_id='ge_test_checkpoint',
+        expectation_suite_name='kedro.test',
+        batch_kwargs={
+            'path': test_data_file,
+            'datasource': 'data__dir'
+        },
+        data_context_root_dir=ge_root_dir
+    )
+
+    kedro_split = KedroOperator(
         task_id="split",
         package_name=package_name,
         pipeline_name=pipeline_name,
@@ -93,7 +75,7 @@ with DAG(
         env=env,
     )
 
-    tasks["train"] = KedroOperator(
+    kedro_train = KedroOperator(
         task_id="train",
         package_name=package_name,
         pipeline_name=pipeline_name,
@@ -102,7 +84,7 @@ with DAG(
         env=env,
     )
 
-    tasks["predict"] = KedroOperator(
+    kedro_predict = KedroOperator(
         task_id="predict",
         package_name=package_name,
         pipeline_name=pipeline_name,
@@ -111,7 +93,7 @@ with DAG(
         env=env,
     )
 
-    tasks["report"] = KedroOperator(
+    kedro_report = KedroOperator(
         task_id="report",
         package_name=package_name,
         pipeline_name=pipeline_name,
@@ -120,14 +102,7 @@ with DAG(
         env=env,
     )
 
-    ge_batch_kwargs_pass >> tasks["split"]
+    ge_raw_checkpoint >> kedro_split >> kedro_train >> ge_train_checkpoint >> kedro_predict >> kedro_report
+    kedro_split >> ge_test_checkpoint >> kedro_predict
+    kedro_split >> kedro_report
 
-    tasks["split"] >> tasks["train"]
-
-    tasks["split"] >> tasks["report"]
-
-    tasks["split"] >> tasks["predict"]
-
-    tasks["predict"] >> tasks["report"]
-
-    tasks["train"] >> tasks["predict"]

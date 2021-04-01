@@ -1,19 +1,12 @@
 {
   "data_asset_type": "Dataset",
-  "expectation_suite_name": "kedro.demo",
+  "expectation_suite_name": "kedro.test",
   "expectations": [
     {
       "expectation_type": "expect_table_row_count_to_be_between",
       "kwargs": {
         "max_value": 152,
-        "min_value": 145
-      },
-      "meta": {}
-    },
-    {
-      "expectation_type": "expect_column_values_to_not_be_null",
-      "kwargs": {
-        "column": "species"
+        "min_value": 10
       },
       "meta": {}
     }
@@ -21,9 +14,9 @@
   "meta": {
     "BasicSuiteBuilderProfiler": {
       "batch_kwargs": {
-        "data_asset_name": "iris",
+        "data_asset_name": "iris_test",
         "datasource": "data__dir",
-        "path": "/usr/local/airflow/data/01_raw/iris.csv"
+        "path": "/usr/local/airflow/data/05_model_input/example_test_x.pkl"
       },
       "created_at": 1604611203.263398,
       "created_by": "BasicSuiteBuilderProfiler"
@@ -31,9 +24,9 @@
     "citations": [
       {
         "batch_kwargs": {
-          "data_asset_name": "iris",
+          "data_asset_name": "iris_test",
           "datasource": "data__dir",
-          "path": "/usr/local/airflow/data/01_raw/iris.csv"
+          "path": "/usr/local/airflow/data/05_model_input/example_test_x.pkl"
         },
         "batch_markers": {
           "ge_load_time": "20201105T212003.084019Z",

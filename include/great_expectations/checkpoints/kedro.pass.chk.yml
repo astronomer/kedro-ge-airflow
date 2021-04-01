@@ -18,4 +18,4 @@ batches:
       datasource: data__dir
       data_asset_name: iris
     expectation_suite_names: # one or more suites may validate against a single batch
-      - kedro.demo
+      - kedro.raw
