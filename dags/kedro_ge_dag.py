@@ -1,7 +1,7 @@
 from airflow import DAG
 from airflow.version import version
 from datetime import datetime, timedelta
-from include.operators.kedro_operator import KedroOperator
+from plugins.operators.kedro_operator import KedroOperator
 from great_expectations_provider.operators.great_expectations import GreatExpectationsOperator
 from pathlib import Path
 
