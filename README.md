@@ -1,176 +1,47 @@
-# boc
+# Airflow + Kedro + Great Expectations Demo
 
 ## Overview
 
-This is your new Kedro project, which was generated using `Kedro 0.17.2`.
+This project shows how to use three open source tools, Airflow, Kedro, and Great Expectations, together to help productionize machine learning pipelines. It was developed to support a talk on this topic given at the 2021 Airflow Summit. You can find a recording of the talk [here](https://airflowsummit.org/live/). 
 
-Take a look at the [Kedro documentation](https://kedro.readthedocs.io) to get started.
+The repo contains two example DAGs:
+ - `kedro_raw.py` is a DAG created automatically from a Kedro project (more on this in the Kedro section below)
+ - `kedro_ge_dag.py` is a DAG that integrates Great Expectations checks into a Kedro pipeline
 
-## Rules and guidelines
+The repo also contains supporting file structure for the Kedro project and the Great Expectations validations as described below. 
 
-In order to get the best out of the template:
-
-* Don't remove any lines from the `.gitignore` file we provide
-* Make sure your results can be reproduced by following a [data engineering convention](https://kedro.readthedocs.io/en/stable/11_faq/01_faq.html#what-is-data-engineering-convention)
-* Don't commit data to your repository
-* Don't commit any credentials or your local configuration to your repository. Keep all your credentials and local configuration in `conf/local/`
-
-## How to install dependencies
-
-Declare any dependencies in `src/requirements.txt` for `pip` installation and `src/environment.yml` for `conda` installation.
-
-To install them, run:
+## Repo Structure
+This repo contains two example DAGs, as well as supporting files for Kedro and Great Expectations. The file structure is a combination of an Astronomer Airflow project, and a `kedro-airflow` project. Below are high level descriptions of each folder as a guide:
 
 ```
-kedro install
++-- conf/                     # Kedro project configuration files generated automatically by `kedro-airflow`
++-- dags/                     # Airflow DAGs 
++-- data/                     # Data used for Kedro project, in this case the Iris dataset
++-- include/
+|   +-- great_expectations/   # Great Expectations supporting files, including checkpoints and expectations
++-- plugins/
+|   +-- operators/            # Custom operators, in this case the `KedroOperator` generated automatically by `kedro-airflow`
++-- src/                      # Source for the Kedro package, including all Kedro node and pipeline code that is used by the `KedroOperator` tasks
 ```
 
-## How to run Kedro
+## Kedro
+[Kedro](https://github.com/quantumblacklabs/kedro) is an open source development workflow tool that helps structure reproducible, scaleable, deployable, robust and versioned machine learning data pipelines. You can read more about the project [here](https://kedro.readthedocs.io/en/0.15.3/01_introduction/01_introduction.html).
 
-You can run your Kedro project with:
+Once you have a Kedro project, you can turn it into an Airflow DAG using the `kedro-airflow` package. Documentation on the package and how to use it can be found [here](https://github.com/quantumblacklabs/kedro-airflow). 
 
-```
-kedro run
-```
-
-## How to test your Kedro project
-
-Have a look at the file `src/tests/test_run.py` for instructions on how to write your tests. You can run your tests as follows:
-
-```
-kedro test
-```
-
-To configure the coverage threshold, look at the `.coveragerc` file.
+This repo uses the [Iris example project](https://kedro.readthedocs.io/en/stable/02_get_started/05_example_project.html) from Kedro to convert into an Airflow DAG with simple split, train, predict, and report steps.
 
 
-## Project dependencies
+## Great Expectations
+[Great Expectations](https://greatexpectations.io/) is an open source Python framework for data validations. In the context of an Airflow DAG, it can be used to implement data validation checks at any point in your pipeline. This repo makes use of the [Great Expectations provider package](https://registry.astronomer.io/providers/great-expectations), which can be used to easily implement checks using the `GreatExpectationsOperator`.
 
-To generate or update the dependency requirements for your project:
 
-```
-kedro build-reqs
-```
+## Getting Started
 
-This will copy the contents of `src/requirements.txt` into a new file `src/requirements.in` which will be used as the source for `pip-compile`. You can see the output of the resolution by opening `src/requirements.txt`.
+The easiest way to run these example DAGs is to use the Astronomer CLI to get an Airflow instance up and running locally:
 
-After this, if you'd like to update your project requirements, please update `src/requirements.in` and re-run `kedro build-reqs`.
-
-[Further information about project dependencies](https://kedro.readthedocs.io/en/stable/04_kedro_project_setup/01_dependencies.html#project-specific-dependencies)
-
-## How to work with Kedro and notebooks
-
-> Note: Using `kedro jupyter` or `kedro ipython` to run your notebook provides these variables in scope: `context`, `catalog`, and `startup_error`.
-
-### Jupyter
-To use Jupyter notebooks in your Kedro project, you need to install Jupyter:
-
-```
-pip install jupyter
-```
-
-After installing Jupyter, you can start a local notebook server:
-
-```
-kedro jupyter notebook
-```
-
-### JupyterLab
-To use JupyterLab, you need to install it:
-
-```
-pip install jupyterlab
-```
-
-You can also start JupyterLab:
-
-```
-kedro jupyter lab
-```
-
-### IPython
-And if you want to run an IPython session:
-
-```
-kedro ipython
-```
-
-### How to convert notebook cells to nodes in a Kedro project
-You can move notebook code over into a Kedro project structure using a mixture of [cell tagging](https://jupyter-notebook.readthedocs.io/en/stable/changelog.html#cell-tags) and Kedro CLI commands.
-
-By adding the `node` tag to a cell and running the command below, the cell's source code will be copied over to a Python file within `src/<package_name>/nodes/`:
-
-```
-kedro jupyter convert <filepath_to_my_notebook>
-```
-> *Note:* The name of the Python file matches the name of the original notebook.
-
-Alternatively, you may want to transform all your notebooks in one go. Run the following command to convert all notebook files found in the project root directory and under any of its sub-folders:
-
-```
-kedro jupyter convert --all
-```
-
-### How to ignore notebook output cells in `git`
-To automatically strip out all output cell contents before committing to `git`, you can run `kedro activate-nbstripout`. This will add a hook in `.git/config` which will run `nbstripout` before anything is committed to `git`.
-
-> *Note:* Your output cells will be retained locally.
-
-## Package your Kedro project
-
-[Further information about building project documentation and packaging your project](https://kedro.readthedocs.io/en/stable/03_tutorial/05_package_a_project.html)
-
-## Run your project in Airflow
-
-The easiest way to run your project in Airflow is by [installing the Astronomer CLI](https://www.astronomer.io/docs/cloud/stable/get-started/quickstart#step-4-install-the-astronomer-cli)
-and follow the following instructions:
-
-Package your project:
-```shell
-kedro package
-```
-
-Copy the package at the root of the project such that the Docker images 
-created by the Astronomer CLI can pick it up:
-```shell
-cp src/dist/*.whl ./
-```
-
-Generate a catalog file with placeholders for all the in-memory datasets:
-```shell
-kedro catalog create --pipeline=__default__
-```
-
-Edit the file `conf/base/catalog/__default__.yml` and choose a way to 
-persist the datasets rather than store them in-memory. E.g.:
-```yaml
-example_train_x:
-  type: pickle.PickleDataSet
-  filepath: data/05_model_input/example_train_x.pkl
-example_train_y:
-  type: pickle.PickleDataSet
-  filepath: data/05_model_input/example_train_y.pkl
-example_test_x:
-  type: pickle.PickleDataSet
-  filepath: data/05_model_input/example_test_x.pkl
-example_test_y:
-  type: pickle.PickleDataSet
-  filepath: data/05_model_input/example_test_y.pkl
-example_model:
-  type: pickle.PickleDataSet
-  filepath: data/06_models/example_model.pkl
-example_predictions:
-  type: pickle.PickleDataSet
-  filepath: data/07_model_output/example_predictions.pkl
-```
-
-Install the Kedro Airflow plugin and convert your pipeline into an Airflow dag:
-```shell
-pip install kedro-airflow
-kedro airflow create -t dags/
-```
-
-Run your local Airflow instance through Astronomer:
-```shell
-astro dev start
-```
+ 1. [Install the Astronomer CLI](https://www.astronomer.io/docs/cloud/stable/develop/cli-quickstart)
+ 2. Clone this repo somewhere locally and navigate to it in your terminal
+ 3. Initialize an Astronomer project by running `astro dev init`
+ 4. Start Airflow locally by running `astro dev start`
+ 5. Navigate to localhost:8080 in your browser and you should see the tutorial DAGs there
