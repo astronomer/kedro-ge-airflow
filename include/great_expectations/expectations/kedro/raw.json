@@ -3,14 +3,6 @@
   "expectation_suite_name": "kedro.raw",
   "expectations": [
     {
-      "expectation_type": "expect_table_row_count_to_be_between",
-      "kwargs": {
-        "max_value": 152,
-        "min_value": 145
-      },
-      "meta": {}
-    },
-    {
       "expectation_type": "expect_column_values_to_not_be_null",
       "kwargs": {
         "column": "species"

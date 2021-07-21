@@ -28,7 +28,7 @@ default_args = {
     'retry_delay': timedelta(minutes=1)
 }
 
-with DAG("boc",
+with DAG("kedro-ge",
         start_date=datetime(2021, 1, 1),
         max_active_runs=1,
         schedule_interval='@daily',
