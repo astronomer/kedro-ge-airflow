@@ -155,3 +155,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# Airflow settings
+airflow_settings.yaml
