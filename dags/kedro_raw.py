@@ -45,24 +45,18 @@ project_path = Path.cwd()
 package_name = "boc"
 
 
-# Default settings applied to all tasks
-default_args = {
-    'owner': 'airflow',
-    'depends_on_past': False,
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5)
-}
-
-
 with DAG(
     "kedro_airflow_example",
     start_date=datetime(2021, 1, 1),
     max_active_runs=1,
     schedule_interval='@daily',
-    default_args=default_args,
-    catchup=False 
+    # Default settings applied to all tasks
+    default_args={
+        'email_on_failure': False,
+        'email_on_retry': False,
+        'retries': 1,
+    },
+    catchup=False
 ) as dag:
 
     tasks = {}

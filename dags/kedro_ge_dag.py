@@ -18,22 +18,17 @@ train_data_file = '/usr/local/airflow/data/05_model_input/example_train_x.pkl'
 ge_root_dir = '/usr/local/airflow/include/great_expectations'
 
 
-# Default settings applied to all tasks
-default_args = {
-    'owner': 'airflow',
-    'depends_on_past': False,
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=1)
-}
-
 with DAG("kedro-ge",
         start_date=datetime(2021, 1, 1),
         max_active_runs=1,
         schedule_interval='@daily',
-        default_args=default_args,
-        catchup=False 
+        default_args={
+            'email_on_failure': False,
+            'email_on_retry': False,
+            'retries': 1,
+            'retry_delay': timedelta(minutes=1),
+        },
+        catchup=False
     ) as dag:
 
     ge_raw_checkpoint = GreatExpectationsOperator(
@@ -105,4 +100,3 @@ with DAG("kedro-ge",
     ge_raw_checkpoint >> kedro_split >> kedro_train >> ge_train_checkpoint >> kedro_predict >> kedro_report
     kedro_split >> ge_test_checkpoint >> kedro_predict
     kedro_split >> kedro_report
-
